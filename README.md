@@ -1,4 +1,4 @@
-# 短线股票推荐 Agent (PRD V2.1)
+# 短线股票推荐 Agent 
 
 基于 JTBD 模型与 [TradingAgents-CN](https://github.com/hsliuping/TradingAgents-CN) 架构的 A 股短线股票自动化每日推荐系统。
 
