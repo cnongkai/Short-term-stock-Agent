@@ -1,0 +1,42 @@
+# ============================================================
+# 短线股票推荐 Agent - 依赖清单
+# 安装: pip install -r requirements.txt
+# ============================================================
+
+# LangGraph / LangChain (多智能体图编排, 对应 PRD 5.2 架构)
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-core>=0.3.0
+
+# LLM (DeepSeek 走 OpenAI 兼容接口, 无需单独 SDK)
+openai>=1.0.0
+
+# === 数据源 (PRD 6.10 数据流图) ===
+akshare>=1.13.0          # 主数据源: 行情/财务/龙虎榜/资金流/新闻/板块 (免费无token)
+baostock>=0.8.9          # 备用数据源 (免费无token)
+tushare>=1.4.0           # 备用数据源 (token可选)
+
+# === 政策信源抓取 (PRD 6.3, V2 新增) ===
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+feedparser>=6.0.11       # RSS 解析: 四大证券报/新华社降级源 (PRD 10.2)
+urllib3>=2.0.0
+
+# === 数据处理 ===
+pandas>=2.0.0
+numpy>=1.24.0
+
+# === 技术指标 (PRD 8.7 technical_indicator_calc) ===
+stockstats>=0.5.0        # MACD/RSI/KDJ/BOLL/均线计算 (PyPI 最新 0.6.x)
+
+# === 配置与日志 ===
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+loguru>=0.7.0
+
+# === 工具 ===
+python-dateutil>=2.8.0
+tenacity>=8.0.0          # 重试装饰器 (LLM/数据源重试)
