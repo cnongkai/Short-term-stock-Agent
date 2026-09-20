@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+ENV/
+
+# 环境变量 (含 API Key, 严禁提交)
+.env
+
+# 运行产出 (保留目录结构, 忽略内容)
+results/*
+!results/.gitkeep
+!results/logs/.gitkeep
+!results/reports/.gitkeep
+*.log
+
+# 数据库 (含运行数据, 不提交)
+*.db
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# IDE
+.vscode/
+.idea/
+.trae/
+*.swp
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 缓存
+.pytest_cache/
+.cache/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

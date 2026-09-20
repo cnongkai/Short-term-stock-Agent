@@ -1,4 +1,4 @@
-# 短线股票推荐 Agent 
+# 短线股票推荐 Agent (PRD V2.1)
 
 基于 JTBD 模型与 [TradingAgents-CN](https://github.com/hsliuping/TradingAgents-CN) 架构的 A 股短线股票自动化每日推荐系统。
 
@@ -230,6 +230,61 @@ python -m pytest tests/test_technical_indicator_calc.py -v
 - **熔断器单测** (13 项): 单例模式 / 阈值触发 / 冷却到期 / HALF_OPEN 探测 / 渐进退避(2x→4x→4x) / 成功重置 / 统计输出
 - **safe_llm_invoke 单测** (12 项): 90s 硬超时 / 瞬时错误重试 / 指数退避 / FallbackResponse 降级 / on_fallback 回调
 - **技术指标单测** (24 项): 字符串类型数据(核心修复) / 数值类型回归 / 边界(空/缺列/混合) / 信号解读(多空/超买超卖/金叉) / 辅助函数
+
+## V3 评估与反馈闭环
+
+### 自学习架构
+
+系统通过 SQLite 性能数据库实现"推荐 → 追踪 → 归因 → 反馈注入 → 再推荐"的自学习闭环:
+
+```
+推荐产出 → 存入 recommendations 表
+    ↓ (等待 T+N 持仓周期结束)
+结果追踪 → 写入 outcomes 表 (收益率/最大回撤/超额收益)
+    ↓
+归因分析 → 六维归因 (分析师/板块/置信度/评级组合/市场环境/失败模式)
+    ↓
+参数调优 → 五维调优建议 (选股阈值/板块权重/ReAct迭代/置信度校准/分析师权重)
+    ↓
+反馈注入 → 历史表现摘要注入 Agent 提示词
+    ↓
+下一次推荐 (系统"记住"了历史经验)
+```
+
+### 评估模块
+
+| 模块 | 文件 | 功能 |
+| --- | --- | --- |
+| PerformanceDB | `stock_agent/eval/performance_db.py` | SQLite 持久化推荐记录与追踪结果 |
+| OutcomeTracker | `stock_agent/eval/outcome_tracker.py` | T+N 收益率计算与基准对比 |
+| AttributionEngine | `stock_agent/eval/attribution_engine.py` | 六维归因分析与优化建议 |
+| ParamOptimizer | `stock_agent/eval/param_optimizer.py` | 保守参数调优 (dry_run, 最大20%调整) |
+| FeedbackInjector | `stock_agent/eval/feedback_injector.py` | 历史表现注入 Agent 提示词 |
+| BacktestRunner | `stock_agent/eval/backtest_runner.py` | 批量回测 |
+
+### 安全机制
+
+- 样本门槛: 归因需 >=5 条, 调优需 >=10 条追踪记录
+- 幅度限制: 单次参数调整不超过 20%
+- 只读模式: 调优仅生成建议, 不自动修改配置
+
+## 前端界面
+
+系统提供全栈 Web 界面, 后端同时托管前端静态文件:
+
+```bash
+# 一键启动 (双击 run.bat 或命令行)
+python api_server.py --port 5000
+# 浏览器自动打开 http://localhost:5000
+```
+
+前端功能:
+- 实时运行状态监控 (候选池/分析进度/辩论轮次)
+- 推荐结果展示 (评级/目标价/止损/置信度/风险等级)
+- 运行指标仪表盘 (耗时/Token消耗/节点计时/工具调用)
+- 配置面板 (LLM/ReAct/选股/风控参数在线调整)
+- 历史推荐与验证报告查阅
+- 产品介绍页 (架构图/流程说明/设计理念)
 
 ## 致谢
 

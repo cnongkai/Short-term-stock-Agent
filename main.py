@@ -12,6 +12,7 @@
 参考架构: TradingAgents-CN 主入口
 """
 import argparse
+import atexit
 import sys
 import os
 from datetime import datetime
@@ -137,6 +138,54 @@ def main():
 
     logger.info(f"[结果] 报告已保存至 {config['results_dir']}/")
 
+    # === 清理资源 (V3: 修复进程挂起问题) ===
+    _cleanup_resources()
+
+
+def _cleanup_resources():
+    """清理后台资源: AkShare线程池 / BaoStock登出 / 缓存关闭
+
+    问题根因: AkShareProvider 创建了 ThreadPoolExecutor(max_workers=2) 但从未 shutdown,
+    这些非 daemon 线程阻止 Python 进程退出。BaoStock 登录后也未 logout。
+    """
+    from stock_agent.dataflows.data_source_manager import get_manager
+
+    try:
+        manager = get_manager()
+        for provider in manager._providers:
+            name = provider.__class__.__name__
+            # AkShare: 关闭超时线程池
+            if hasattr(provider, '_timeout_executor'):
+                try:
+                    provider._timeout_executor.shutdown(wait=False)
+                    logger.debug(f"[清理] {name} 线程池已关闭")
+                except Exception:
+                    pass
+            # BaoStock: 登出
+            if hasattr(provider, 'logout') and hasattr(provider, '_logged_in'):
+                try:
+                    provider.logout()
+                    logger.debug(f"[清理] {name} 已登出")
+                except Exception:
+                    pass
+    except Exception as e:
+        logger.debug(f"[清理] 资源清理异常 (不影响结果): {e}")
+
+    # 关闭缓存
+    try:
+        from stock_agent.dataflows.cache import get_cache_store
+        get_cache_store().shutdown()
+    except Exception:
+        pass
+
+
+# 注册 atexit 钩子 (确保异常退出时也清理)
+atexit.register(_cleanup_resources)
+
 
 if __name__ == "__main__":
     main()
+    # 强制退出: AkShare/BaoStock 的非 daemon 线程会阻止正常退出,
+    # 清理后用 os._exit(0) 确保进程立即终止 (V3 修复进程挂起)
+    import os as _os
+    _os._exit(0)
